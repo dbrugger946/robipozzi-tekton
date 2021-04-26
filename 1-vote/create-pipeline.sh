@@ -1,0 +1,31 @@
+source ../../setenv.sh
+
+# ##### START - Variable section
+SCRIPT=create-pipeline.sh
+OPENSHIFT_PROJECT=windfire
+# ##### END - Variable section
+
+run()
+{
+    oc project $OPENSHIFT_PROJECT
+    oc create -f pvc.yaml
+    oc create -f vote-resources.yaml
+    oc create -f vote-pipeline.yaml
+    tkn pipeline list
+}
+
+setOpenshiftProject()
+{
+    ## Create OpenShift Project
+	echo ${grn}Enter OpenShift project - leaving blank will set project to ${end}${mag}windfire : ${end}
+	read OPENSHIFT_PROJECT
+    if [ "$OPENSHIFT_PROJECT" == "" ]; then
+        OPENSHIFT_PROJECT=windfire
+    fi
+    run
+}
+
+# ##############################################
+# #################### MAIN ####################
+# ##############################################
+setOpenshiftProject

@@ -1,0 +1,10 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: Trigger
+metadata:
+  name: windfire-restaurants-backend-trigger
+spec:
+  serviceAccountName: pipeline
+  bindings:
+    - ref: windfire-restaurants-backend-triggerbinding
+  template:
+     name: windfire-restaurants-backend-triggertemplate

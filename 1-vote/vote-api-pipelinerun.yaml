@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1beta1 
+kind: PipelineRun 
+metadata:
+  name: vote-api-pipelinerun 
+spec:
+  pipelineRef:
+    name: vote-build-and-deploy
+  params: 
+  - name: deployment-name
+    value: vote-api
+  - name: git-url
+    value: https://github.com/robipozzi/vote-api.git
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/windfire/vote-api:1.0
+  workspaces: 
+  - name: shared-workspace
+    persistentVolumeClaim:
+      claimName: vote-pvc

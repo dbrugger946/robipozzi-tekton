@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: vote-api-git
+spec:
+  type: git
+  params:
+    - name: url
+      value: https://github.com/robipozzi/vote-api.git
+    - name: revision
+      value: master
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: vote-api-image
+spec:
+  type: image
+  params:
+    - name: url
+      value: >-
+        image-registry.openshift-image-registry.svc:5000/windfire/vote-api:1.0
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: vote-ui-git
+spec:
+  type: git
+  params:
+    - name: url
+      value: https://github.com/robipozzi/vote-ui.git
+    - name: revision
+      value: master
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: vote-ui-image
+spec:
+  type: image
+  params:
+    - name: url
+      value: >-
+        image-registry.openshift-image-registry.svc:5000/windfire/vote-ui:1.0

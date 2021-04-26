@@ -1,0 +1,138 @@
+﻿apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: listing-files
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: ls
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      workingDir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          echo Listing files
+          pwd
+          ls -la
+          echo -----------------------------------
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: windfire-restaurants-backend-git
+spec:
+  type: git
+  params:
+    - name: url
+      value: https://github.com/robipozzi/windfire-restaurants-node
+    - name: revision
+      value: master
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: windfire-restaurants-backend-image
+spec:
+  type: image
+  params:
+    - name: url
+      #configure: replace with where the image should go: perhaps your local registry or Dockerhub with a secret and configured service account
+      value: quay.io/robipozzi/windfire-restaurants-node:1.0
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: windfire-restaurants-backend
+spec:
+  workspaces:
+    - name: workspace
+  params:
+    - name: APP_NAME
+      type: string
+      description: name of the application to deploy
+      default: windfire-restaurants-backend
+    - name: GIT_REPO
+      type: string
+      description: url of the git repo for the code of deployment
+      default: https://github.com/robipozzi/windfire-restaurants-node
+    - name: GIT_REVISION
+      type: string
+      description: revision to be used from repo of the code for deployment
+      default: master
+    - name: IMAGE
+      type: string
+      description: image to be built from the code
+      default: quay.io/robipozzi/windfire-restaurants-node:1.0
+    - name: PATH_CONTEXT
+      type: string
+      description: path where source code for the application is available
+      default: app
+    - name: SERVICE_PORT
+      type: string
+      description: Port on the container that the service should direct traffic to.
+      default: "8082"
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: revision
+          value: $(params.GIT_REVISION)
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: workspace
+    - name: listing-files
+      taskRef:
+        name: listing-files
+      workspaces:
+        - name: source
+          workspace: workspace
+      runAfter:
+        - fetch-repository
+    - name: build-image
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+      - name: TLSVERIFY
+        value: "false"
+      - name: IMAGE
+        value: $(params.IMAGE)
+      workspaces:
+      - name: source
+        workspace: workspace
+      runAfter:
+      - listing-files
+    - name: deploy
+      params:
+        - name: ARGS
+          value:
+            - new-app
+            - --name=$(params.APP_NAME)
+            - --docker-image=$(params.IMAGE)            
+            - --as-deployment-config
+      runAfter:
+        - build-image
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+    - name: expose-route
+      params:
+        - name: ARGS
+          value:
+            - expose
+            - service/$(params.APP_NAME)
+            - --port $(params.SERVICE_PORT)
+      runAfter:
+        - deploy
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask

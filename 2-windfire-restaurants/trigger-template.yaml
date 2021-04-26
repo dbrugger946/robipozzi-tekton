@@ -1,0 +1,36 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: windfire-restaurants-backend-triggertemplate
+spec:
+  params:
+  - name: git-repo-url
+    description: The git repository url
+  - name: git-revision
+    description: The git revision
+    default: master
+  - name: APP_NAME
+    description: Application name
+    default: windfire-restaurants-backend
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      name: build-deploy-$(tt.params.APP_NAME)-$(uid)
+    spec:
+      serviceAccountName: pipeline
+      pipelineRef:
+        name: windfire-restaurants-backend
+      params:
+      - name: APP_NAME
+        value: windfire-restaurants-backend
+      - name: GIT_REPO
+        value: $(tt.params.git-repo-url)
+      - name: GIT_REVISION
+        value: $(tt.params.git-revision)
+      - name: IMAGE
+        value: quay.io/robipozzi/windfire-restaurants-node:1.0
+      workspaces:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: windfire-restaurants-pvc

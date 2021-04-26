@@ -1,0 +1,8 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: windfire-restaurants-backend-triggerbinding
+spec:
+  params:
+  - name: git-repo-url
+    value: $(body.repository.url)

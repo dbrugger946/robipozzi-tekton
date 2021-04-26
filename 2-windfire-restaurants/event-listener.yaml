@@ -1,0 +1,8 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: windfire-restaurants-backend
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - triggerRef: windfire-restaurants-backend-trigger
