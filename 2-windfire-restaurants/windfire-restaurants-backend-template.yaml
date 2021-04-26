@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: ${APP_NAME}
+objects:
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${LABEL}
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${LABEL}
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APP_NAME}:latest
+    postCommit: {}
+    resources: {}
+    source:
+      contextDir: app
+      git:
+        uri: https://github.com/robipozzi/windfire-restaurants-node
+        ref: ${GITHUB_BRANCH}
+      sourceSecret:
+        name: ${OPENSHIFT_GITHUB_SECRET}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: nodejs:12
+          namespace: openshift
+      type: Source
+    triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${LABEL}
+  spec:
+    replicas: 1
+    selector:
+      app: ${LABEL}
+      deploymentconfig: ${APP_NAME}
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        labels:
+          app: ${LABEL}
+          deploymentconfig: ${APP_NAME}
+      spec:
+        containers:
+        - name: ${APP_NAME}
+          image: ${APP_NAME}:latest
+          env:
+            - name: DB_TYPE
+              value: ${DB_TYPE}
+            #- name: DB_SECRET
+            #  valueFrom:
+            #      secretKeyRef:
+            #        name: ${DB_SECRET}
+            #        key: binding
+            - name: DB_NAME
+              value: ${DB_NAME}
+            - name: DB_COLLECTION
+              value: ${DB_COLLECTION}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8082
+          resources:
+            limits:
+              cpu: 200m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          ports:
+          - containerPort: 8082
+            protocol: TCP
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - windfire-restaurants-backend
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:latest
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${LABEL}
+  spec:
+    ports:
+    - name: 8082-tcp
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    selector:
+      app: ${LABEL}
+      deploymentconfig: ${APP_NAME}
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${LABEL}
+  spec:
+    host: ${APP_NAME}-${OPENSHIFT_PROJECT}.${OPENSHIFT_CLUSTER_DOMAIN}
+    port:
+      targetPort: 8082-tcp
+    to:
+      kind: Service
+      name: ${APP_NAME}
+      weight: 100
+    wildcardPolicy: None
+parameters:
+  - name: GITHUB_BRANCH
+    required: true
+    value: master
+  - name: OPENSHIFT_GITHUB_SECRET
+    required: true
+    value: robipozzi-github
+  - name: APP_NAME 
+    required: true
+    value: windfire-restaurants-backend
+  - name: LABEL 
+    required: true
+    value: windfire-restaurants-backend
+  - name: OPENSHIFT_PROJECT
+    required: true
+  - name: OPENSHIFT_CLUSTER_DOMAIN 
+    required: true
+  - name: DB_TYPE
+    required: true
+    value: fake
+  - name: DB_SECRET
+    required: true
+    value: binding-mongodb-demo
+  - name: DB_NAME
+    required: true
+    value: restaurants
+  - name: DB_COLLECTION
+    required: true
+    value: restaurants
