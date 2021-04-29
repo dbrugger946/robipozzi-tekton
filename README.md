@@ -150,8 +150,8 @@ cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
 ```
 
 The script uses **[windfire-restaurants-backend-pipelinerun.yaml](2-windfire-restaurants/windfire-restaurants-backend-pipelinerun.yaml)** file to run the Pipeline using the previously created PipelineResources:
-    - *windfire-restaurants-node-git*: https://github.com/robipozzi/windfire-restaurants-node
-    - *windfire-restaurants-node-image*: image-registry.openshift-image-registry.svc:5000/windfire/vote-api:2.0
+- *windfire-restaurants-node-git*: https://github.com/robipozzi/windfire-restaurants-node
+- *windfire-restaurants-node-image*: image-registry.openshift-image-registry.svc:5000/windfire/vote-api:2.0
 
 Alternatively you can obviously go to OpenShift web console and start the pipeline from the GUI.
 
