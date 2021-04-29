@@ -89,14 +89,6 @@ spec:
       workspaces:
         - name: output
           workspace: workspace
-    - name: listing-files
-      taskRef:
-        name: listing-files
-      workspaces:
-        - name: source
-          workspace: workspace
-      runAfter:
-        - fetch-repository
     - name: build-image
       taskRef:
         name: buildah
@@ -110,8 +102,11 @@ spec:
       - name: source
         workspace: workspace
       runAfter:
-      - listing-files
+      - fetch-repository
     - name: deploy
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
       params:
         - name: ARGS
           value:
@@ -121,10 +116,10 @@ spec:
             - --as-deployment-config
       runAfter:
         - build-image
+    - name: expose-route
       taskRef:
         name: openshift-client
         kind: ClusterTask
-    - name: expose-route
       params:
         - name: ARGS
           value:
@@ -133,6 +128,3 @@ spec:
             - --port $(params.SERVICE_PORT)
       runAfter:
         - deploy
-      taskRef:
-        name: openshift-client
-        kind: ClusterTask
