@@ -17,6 +17,14 @@ Tekton is a flexible Kubernetes-native open-source CI/CD framework, which enable
 Refer to Red Hat OpenShift official documentation (https://docs.openshift.com/container-platform/4.6/pipelines/creating-applications-with-cicd-pipelines.html) for more info about OpenShift Pipelines.
 
 ## Before you start
+Clone this repository to access to code and scripts
+
+```
+mkdir $HOME/dev/devops
+cd $HOME/dev/devops
+git clone https://github.com/robipozzi/robipozzi-tekton
+```
+
 Before experimenting with OpenShift Pipelines, you need to take 2 preparatory steps:
 1. [Install OpenShift Pipelines](#install-openShift-pipelines) on your OpenShift cluster (pretty obvious !!!).
 2. [Create a Service Account](#configure-service-account) and configure it appropriately.
@@ -33,7 +41,12 @@ Click on the tile and then the subsequent Install button.
 Keep the default settings on the Create Operator Subscription page and click Subscribe.
 
 ### Configure Service Account
-To make sure the pipeline has the appropriate permissions to store images in the local OpenShift registry, we need to create a service account. We'll call it **pipeline**.
+To make sure the pipeline has the appropriate permissions to store images in the local OpenShift registry, we need to create a service account by running **[create-serviceaccount.sh](create-serviceaccount.sh)** script. We'll call it **pipeline**.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./create-serviceaccount.sh
+```
 
 Running **[create-serviceaccount.sh](create-serviceaccount.sh)** script does everything that is needed:
 - it sets context to the OpenShift project selected (the project is automatically created if it does not pre-exist)
@@ -55,7 +68,14 @@ This example is taken from Red Hat OpenShift official documentation (https://doc
 - A front-end interface, **vote-ui**, with the source code in the [ui-repo](https://github.com/robipozzi/vote-ui) Git repository.
 - A back-end interface, **vote-api**, with the source code in the [api-repo](https://github.com/robipozzi/vote-api) Git repository.
 
-Run **[create-pipeline.sh](1-vote/create-pipeline.sh)** script to create the Pipeline and all the needed Tasks and PipelineResources in your OpenShift cluster; the script does the following:
+Run **[create-pipeline.sh](1-vote/create-pipeline.sh)** script to create the Pipeline and all the needed Tasks and PipelineResources in your OpenShift cluster.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/1-vote
+./create-pipeline.sh
+```
+
+The script does the following:
 
 1. It uses **[pvc.yaml](1-vote/pvc.yaml)** file to create:
     - *vote-pvc* PersistentVolumeClaim, which provides data storage and binds it to the Workspace. This PersistentVolumeClaim provides the volumes or filesystem required for the Pipeline execution.
@@ -86,6 +106,11 @@ Once you have created the Pipeline, you can go to OpenShift web console and star
 
 Run **[delete-pipeline.sh](1-vote/delete-pipeline.sh)** script to delete Pipeline, Tasks and PipelineResources at once.
 
+```
+cd $HOME/dev/devops/robipozzi-tekton/1-vote
+./delete-pipeline.sh
+```
+
 ### Windfire Restaurants Pipeline
 - [Pipeline configuration](#pipeline-configuration)
 - [Trigger Pipeline execution](#trigger-pipeline-execution)
@@ -93,7 +118,14 @@ Run **[delete-pipeline.sh](1-vote/delete-pipeline.sh)** script to delete Pipelin
 #### Pipeline configuration
 This example uses the backend of *Windfire Restaurants* application, which returns a list of restaurants; the source code is available at this GitHub repo: https://github.com/robipozzi/windfire-restaurants-node .
 
-Run **[create-pipeline.sh](2-windfire-restaurants/create-pipeline.sh)** script to create the Pipeline and all the needed PipelineResources in your OpenShift cluster; the script does the following:
+Run **[create-pipeline.sh](2-windfire-restaurants/create-pipeline.sh)** script to create the Pipeline and all the needed PipelineResources in your OpenShift cluster.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./create-pipeline.sh
+```
+
+The script does the following:
 
 1. It uses **[pvc.yaml](2-windfire-restaurants/pvc.yaml)** file to create:
     - *windfire-restaurants-pvc* PersistentVolumeClaim, which provides data storage and binds it to the Workspace. This PersistentVolumeClaim provides the volumes or filesystem required for the Pipeline execution.
@@ -110,18 +142,39 @@ The Pipeline performs the following tasks for the back-end application *vote*:
 - Deploy the image to OpenShift wrapping an *oc new-app* command using *openshift-client* ClusterTask.
 - Expose a Route wrapping an *oc expose* command using *openshift-client* ClusterTask.
 
-Once you have created the Pipeline, you can go to OpenShift web console and start it; alternatively you can also launch **[run-pipeline.sh](2-windfire-restaurants/run-pipeline.sh)** script which uses **[windfire-restaurants-backend-pipelinerun.yaml](2-windfire-restaurants/windfire-restaurants-backend-pipelinerun.yaml)** file to run the Pipeline using the previously created PipelineResources:
+Once you have created the Pipeline, you can launch **[run-pipeline.sh](2-windfire-restaurants/run-pipeline.sh)** script to run the pipeline.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./run-pipeline.sh
+```
+
+The script uses **[windfire-restaurants-backend-pipelinerun.yaml](2-windfire-restaurants/windfire-restaurants-backend-pipelinerun.yaml)** file to run the Pipeline using the previously created PipelineResources:
     - *windfire-restaurants-node-git*: https://github.com/robipozzi/windfire-restaurants-node
     - *windfire-restaurants-node-image*: image-registry.openshift-image-registry.svc:5000/windfire/vote-api:2.0
 
+Alternatively you can obviously go to OpenShift web console and start the pipeline from the GUI.
+
 Run **[delete-pipeline.sh](2-windfire-restaurants/delete-pipeline.sh)** script to delete Pipeline and PipelineResources at once.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./delete-pipeline.sh
+```
 
 #### Trigger Pipeline execution
 OpenShift Pipelines can be invoked by human intervention or triggered and automatically executed by events, e.g.: a push to GitHub repository.
 
 Tekton framework encompasses 4 Custom Resource Definitions to enable pipeline execution triggering: **TriggerBinding**, **TriggerTemplate**, **Trigger**, and **EventListener** resources.
 
-Run the provided **[create-trigger.sh](2-windfire-restaurants/create-trigger.sh)** script to create all the resources needed to intercept events and trigger the appropriate pipeline execution; the script sequentially does the following:
+Run the provided **[create-trigger.sh](2-windfire-restaurants/create-trigger.sh)** script to create all the resources needed to intercept events and trigger the appropriate pipeline execution.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./create-trigger.sh
+```
+
+The script sequentially does the following:
 - create a **TriggerBinding** resource, using **[trigger-binding.yaml](2-windfire-restaurants/trigger-binding.yaml)** file.
 - create a **TriggerTemplate** resource, using **[trigger-template.yaml](2-windfire-restaurants/trigger-template.yaml)** file.
 - create a **Trigger** resource, using **[trigger.yaml](2-windfire-restaurants/trigger.yaml)** file.
@@ -148,6 +201,11 @@ Webhooks are HTTP POST messages that are received by the EventListener whenever 
 The event payload is mapped to TriggerBinding that extracts the needed information from the event occuring, while TriggerTemplate defines a PipelineRun resource that processes the event, running a Pipeline, leading to the build and deployment of the application with all the needed Kubernetes resources.
 
 Run **[delete-trigger.sh](2-windfire-restaurants/delete-trigger.sh)** script to delete all the trigger related resources.
+
+```
+cd $HOME/dev/devops/robipozzi-tekton/2-windfire-restaurants
+./delete-trigger.sh
+```
 
 ### Example Health Pipeline
 Example Health is a demo app made of five different images all deployed into a single Red Hat OpenShift.
