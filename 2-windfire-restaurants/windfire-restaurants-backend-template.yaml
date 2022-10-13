@@ -29,7 +29,7 @@ objects:
     source:
       contextDir: app
       git:
-        uri: https://github.com/robipozzi/windfire-restaurants-node
+        uri: https://github.com/dbrugger946/robipozzi-tekton
         ref: ${GITHUB_BRANCH}
       sourceSecret:
         name: ${OPENSHIFT_GITHUB_SECRET}
